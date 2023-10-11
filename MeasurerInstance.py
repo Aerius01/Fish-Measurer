@@ -158,7 +158,7 @@ class MeasurerInstance():
             chosen_image = cv2.putText(chosen_image, trial_count, (15, chosen_image.shape[0]-120), cv2.FONT_HERSHEY_DUPLEX, 2.0, (255, 255, 255), lineType=cv2.LINE_AA)
         
             # Get the length mark
-            length_string = "Avg Length: {0:.2f}cm +/- {1:.2f}cm (This: {2:.2f}cm)".format(Cameras.ConvertPixelsToLength(length_stats[0]), Cameras.ConvertPixelsToLength(length_stats[1]), Cameras.ConvertPixelsToLength(instance.fil_length_pixels))
+            length_string = "Avg Length: {0:.2f}cm +/- {1:.2f}cm (This: {2:.2f}cm)".format(length_stats[0], length_stats[1], Cameras.ConvertPixelsToLength(instance.fil_length_pixels))
         else:
             length_string = "Length: {0:.2f} cm".format(Cameras.ConvertPixelsToLength(instance.fil_length_pixels))
         
@@ -195,18 +195,18 @@ class MeasurerInstance():
         return refined_list
     
     def ExportData(frames_path, target_folder_name, format, measurements):
-        length_stats = (statistics.mean([instance.fil_length_pixels for instance in measurements]), statistics.stdev([instance.fil_length_pixels for instance in measurements]))
+        length_stats = (statistics.mean([Cameras.ConvertPixelsToLength(instance.fil_length_pixels) for instance in measurements]), statistics.stdev([Cameras.ConvertPixelsToLength(instance.fil_length_pixels) for instance in measurements]))
         
         # Export the data to .csv
         df = pd.DataFrame(data={"frame_number": [instance.process_id for instance in measurements], "length_in_pixels": [instance.fil_length_pixels for instance in measurements], "filfinder_length": [Cameras.ConvertPixelsToLength(instance.fil_length_pixels) for instance in measurements], "pixel_count_length": [Cameras.ConvertPixelsToLength(len(instance.long_path_pixel_coords)) for instance in measurements], "pixel_distance_length": [Cameras.ConvertPixelsToLength(instance.manual_length) for instance in measurements]})
         df.to_csv(os.path.join(target_folder_name, "data-output.csv"), sep=';',index=False) 
         
         # Find the instance with the closest length value
-        local_index = [instance.fil_length_pixels for instance in measurements].index(min([instance.fil_length_pixels for instance in measurements], key=lambda x:abs(x-length_stats[0])))
+        local_index = [Cameras.ConvertPixelsToLength(instance.fil_length_pixels) for instance in measurements].index(min([Cameras.ConvertPixelsToLength(instance.fil_length_pixels) for instance in measurements], key=lambda x:abs(x-length_stats[0])))
         closest_instance = [instance for instance in measurements][local_index]
         closest_index = closest_instance.process_id
         
-        print("\nFINAL\nAvg pix: {0:.2f}; Avg cm: {2:.2f}; Closest ID: {1}".format(length_stats[0],closest_index, Cameras.ConvertPixelsToLength(length_stats[0])))
+        print("\nFINAL\nAvg pix: {0:.2f}; Avg cm: {2:.2f}; Closest ID: {1}".format(Cameras.ConvertLengthToPixels(length_stats[0]),closest_index, length_stats[0]))
         
         # Save principal image
         chosen_image = MeasurerInstance.WatermarkImage(closest_instance, length_stats=length_stats)
