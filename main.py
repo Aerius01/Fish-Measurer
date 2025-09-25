@@ -1,25 +1,17 @@
-from Cameras import Cameras
-from app_constructor import TkinterApp
+"""Main entry point for the Fish Measurer application."""
+
+from gui import FishMeasurerApplication
 
 
-# For debug logs --> uncomment to specify a location for these logs
-# import sys
-# import os
-# from datetime import datetime
-# desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
-# folder_path = os.path.join(desktop, "FishMeasurerDebugLogs")
-# if not os.path.isdir(folder_path):
-#     os.mkdir(folder_path)
-# log_string = str(datetime.now().strftime("%Y-%m-%d_%H-%M-%S")) + ".txt"
-# full_path = os.path.join(folder_path, log_string)
-# sys.stdout = open(full_path, 'w')
-# sys.stderr = sys.stdout
+def main():
+    """Main application entry point."""
+    # Create and run the application
+    app = FishMeasurerApplication()
+    app.run()
 
-# Actual execution
-camera = Cameras()
-app = TkinterApp()
-app.CheckIfCalibrated()
-app.Run()
+
+if __name__ == "__main__":
+    main()
 
 
 # PyInstaller
