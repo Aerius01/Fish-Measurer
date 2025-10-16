@@ -65,14 +65,14 @@ class FishProcessor:
     def process_fish(self, 
                     fish_id: str,
                     raw_frame: np.ndarray,
-                    binarized_frame: np.ndarray) -> FishMeasurementResult:
+                    binary_mask: np.ndarray) -> FishMeasurementResult:
         """
         Process a fish measurement from raw and binarized frames.
         
         Args:
             fish_id: Unique identifier for this fish
             raw_frame: Original raw camera frame
-            binarized_frame: Background-subtracted binary frame
+            binary_mask: Background-subtracted binary mask (0/255)
             
         Returns:
             FishMeasurementResult with complete analysis results
@@ -83,7 +83,7 @@ class FishProcessor:
         try:
             # Step 1: Basic image processing
             processing_log.append("Step 1: Image processing")
-            image_result = self.image_processor.process_binary_image(binarized_frame)
+            image_result = self.image_processor.process_binary_image(binary_mask)
             
             if not image_result.success:
                 return FishMeasurementResult(

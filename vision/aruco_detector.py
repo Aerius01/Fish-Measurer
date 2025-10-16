@@ -229,6 +229,11 @@ class ArUcoDetector:
         
         return (length - calibration.intercept) / calibration.slope
     
+    # Backwards-compatible alias expected by orchestrator
+    def clear_calibration(self) -> None:
+        """Clear stored calibration samples/history (alias)."""
+        self.clear_calibration_history()
+    
     def clear_calibration_history(self) -> None:
         """Clear calibration history."""
         self._slope_history.clear()

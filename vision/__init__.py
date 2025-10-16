@@ -31,6 +31,15 @@ from .path_analyzer import PathAnalyzer, PathAnalysisResult
 from .aruco_detector import ArUcoDetector, ArUcoMarker, CalibrationData
 from .display_manager import DisplayManager
 
+# Camera Hardware Abstraction Layer (HAL)
+from .camera_hal import (
+    CameraHAL,
+    BaslerCamera,
+    CameraFactory,
+    CameraSettings,
+    CameraInfo
+)
+
 # Utility functions
 from .aruco_generator import generate_aruco_marker, generate_marker_set
 
@@ -42,13 +51,20 @@ __author__ = "Fish Measurer Team"
 __all__ = [
     # Main classes
     'FishProcessor',
-    'CameraManager', 
+    'CameraManager',
     'ImageProcessor',
     'FilamentAnalyzer',
     'PathAnalyzer',
     'ArUcoDetector',
     'DisplayManager',
-    
+
+    # Camera HAL
+    'CameraHAL',
+    'BaslerCamera',
+    'CameraFactory',
+    'CameraSettings',
+    'CameraInfo',
+
     # Result classes
     'FishMeasurementResult',
     'ProcessingResult',
@@ -58,10 +74,10 @@ __all__ = [
     'ArUcoMarker',
     'CalibrationData',
     'CameraConfig',
-    
+
     # Exceptions
     'CameraError',
-    
+
     # Utility functions
     'generate_aruco_marker',
     'generate_marker_set',
