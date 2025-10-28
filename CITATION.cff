@@ -16,10 +16,7 @@ authors:
     affiliation: "University of Massachusetts Boston"
   - family-names: "Bierbach"
     given-names: "David"
-    affiliation:
-      - "Faculty of Life Sciences, Humboldt-Universität zu Berlin"
-      - "Department of Fish Biology, Fisheries and Aquaculture, Leibniz-Institute of Freshwater Ecology and Inland Fisheries"
-      - "Cluster of Excellence 'Science of Intelligence', Technical University of Berlin"
+    affiliation: "Faculty of Life Sciences, Humboldt-Universität zu Berlin; Department of Fish Biology, Fisheries and Aquaculture, Leibniz-Institute of Freshwater Ecology and Inland Fisheries; Cluster of Excellence 'Science of Intelligence', Technical University of Berlin"
 repository-code: "https://github.com/Aerius01/Fish-Measurer"
 url: "https://github.com/Aerius01/Fish-Measurer"
 license: GPL-3.0-or-later
