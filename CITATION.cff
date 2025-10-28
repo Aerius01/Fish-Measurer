@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Fish-Measurer"
+abstract: "A semi-automated fish measurement application using computer vision. It captures live images from a fixed Basler camera and measures fish length using ArUco marker calibration, background subtraction, and skeletal analysis (FilFinder)."
+authors:
+  - family-names: "James"
+    given-names: "David"
+    email: "david.joh.james@gmail.com"
+    orcid: "https://orcid.org/0009-0000-5750-6983"
+    affiliation: "Leibniz-Institut für Gewässerökologie und Binnenfischerei (IGB)"
+  - family-names: "Francisco"
+    given-names: "Fritz Alexander"
+    email: "fritz.a.francisco@gmail.com"
+    orcid: "https://orcid.org/0000-0002-8258-2221"
+    affiliation: "University of Massachusetts Boston"
+  - family-names: "Bierbach"
+    given-names: "David"
+    affiliation:
+      - "Faculty of Life Sciences, Humboldt-Universität zu Berlin"
+      - "Department of Fish Biology, Fisheries and Aquaculture, Leibniz-Institute of Freshwater Ecology and Inland Fisheries"
+      - "Cluster of Excellence 'Science of Intelligence', Technical University of Berlin"
+repository-code: "https://github.com/Aerius01/Fish-Measurer"
+url: "https://github.com/Aerius01/Fish-Measurer"
+license: GPL-3.0-or-later
+keywords:
+  - computer-vision
+  - fish-measurement
+  - aruco-markers
+  - basler-camera
+  - image-processing
+  - image-morphology
+  - skeleton-analysis
+  - opencv
+  - python
+version: 1.0.0
+date-released: 2025-10-28
