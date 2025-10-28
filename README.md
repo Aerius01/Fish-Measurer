@@ -1,4 +1,9 @@
 # FishMeasurer
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17462554.svg)](https://doi.org/10.5281/zenodo.17462554)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-darkmagenta.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-orange.svg)](https://www.python.org/downloads/)
+
 An app to semi-automatically measure live fish using a standardized image capturing rig.
 
 Requirements:
