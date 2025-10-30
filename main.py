@@ -27,6 +27,12 @@ from logic import (
     StateTransition
 )
 from vision import CameraFactory
+from vision.camera_hal import (
+    DEFAULT_EXPOSURE_MS,
+    DEFAULT_FRAMERATE,
+    DEFAULT_GAIN_MODE,
+    DEFAULT_WHITE_BALANCE_MODE
+)
 
 logger = logging.getLogger(__name__)
 
@@ -306,9 +312,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.camera_name_label.setObjectName("DimLabel")
         form.addRow(self.camera_name_label)
 
-        # Exposure (default 100 ms per your environment)
+        # Exposure
         self.exposure_edit = QtWidgets.QLineEdit()
-        self.exposure_edit.setText("100")
+        self.exposure_edit.setText(str(int(DEFAULT_EXPOSURE_MS)))
         self.exposure_edit.setValidator(QtGui.QIntValidator(1, 100000, self))
         self.exposure_edit.textChanged.connect(lambda t: self.camera and t.isdigit() and self.camera.set_exposure_ms(float(t)))
         exposure_row = self._make_field_with_info(
@@ -328,6 +334,9 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             gain_items = ["Off", "Once", "Continuous"]
         self.gain_combo.addItems(gain_items)
+        # Set default selection
+        default_index = gain_items.index(DEFAULT_GAIN_MODE) if DEFAULT_GAIN_MODE in gain_items else 0
+        self.gain_combo.setCurrentIndex(default_index)
         self.gain_combo.currentTextChanged.connect(lambda t: self.camera and self.camera.set_gain_auto(t))
         gain_row = self._make_field_with_info(
             self.gain_combo,
@@ -346,6 +355,9 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             wb_items = ["Off", "Once", "Continuous"]
         self.wb_combo.addItems(wb_items)
+        # Set default selection
+        default_index = wb_items.index(DEFAULT_WHITE_BALANCE_MODE) if DEFAULT_WHITE_BALANCE_MODE in wb_items else 0
+        self.wb_combo.setCurrentIndex(default_index)
         self.wb_combo.currentTextChanged.connect(lambda t: self.camera and self.camera.set_white_balance_auto(t))
         wb_row = self._make_field_with_info(
             self.wb_combo,
@@ -359,7 +371,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Frame rate
         self.fps_edit = QtWidgets.QLineEdit()
-        self.fps_edit.setText("30")
+        self.fps_edit.setText(str(int(DEFAULT_FRAMERATE)))
         self.fps_edit.setValidator(QtGui.QIntValidator(1, 240, self))
         self.fps_edit.textChanged.connect(lambda t: self.camera and t.isdigit() and self.camera.set_framerate(float(t)))
         fps_row = self._make_field_with_info(
@@ -559,6 +571,36 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.camera_name_label.setText("Camera in use: No camera detected")
 
+    def _apply_ui_settings_to_camera(self) -> None:
+        """Apply current UI settings to the camera."""
+        if self.camera is None:
+            return
+
+        try:
+            # Apply exposure from UI
+            if hasattr(self, "exposure_edit") and self.exposure_edit.text().isdigit():
+                exposure = float(self.exposure_edit.text())
+                self.camera.set_exposure_ms(exposure)
+
+            # Apply gain mode from UI
+            if hasattr(self, "gain_combo"):
+                gain_mode = self.gain_combo.currentText()
+                self.camera.set_gain_auto(gain_mode)
+
+            # Apply white balance mode from UI
+            if hasattr(self, "wb_combo"):
+                wb_mode = self.wb_combo.currentText()
+                self.camera.set_white_balance_auto(wb_mode)
+
+            # Apply framerate from UI
+            if hasattr(self, "fps_edit") and self.fps_edit.text().isdigit():
+                fps = float(self.fps_edit.text())
+                self.camera.set_framerate(fps)
+
+            logger.info("Applied UI settings to camera")
+        except Exception as e:
+            logger.error(f"Failed to apply UI settings to camera: {e}")
+
     def _on_camera_connected(self) -> None:
         # Refresh UI after camera connects
         self._update_camera_name_label()
@@ -566,6 +608,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # Update orchestrator with connected camera
         if self.camera is not None:
             self.orchestrator.camera_manager = self.camera
+
+        # Apply UI settings to newly connected camera
+        self._apply_ui_settings_to_camera()
 
         # Transition to UNCALIBRATED state
         if self.state_machine.current_state == MeasurementState.NOCAM:

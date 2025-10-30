@@ -22,12 +22,107 @@ if TYPE_CHECKING:
 
 @dataclass
 class PathElement:
-    """Simple path element for vision module to avoid circular imports."""
+    """
+    Path element representing a branch segment in the longest path.
+
+    This class handles ordering and trimming of branch points based on
+    head/tail connectivity points, using the original algorithm.
+    """
     branch_index: int
     intersection_pts: List[Tuple[int, int]]
     intersection_indices: List[int]
     end_pts: List[Tuple[int, int]]
     end_indices: List[int]
+    head_point: Optional[Tuple[int, int]] = None
+    tail_point: Optional[Tuple[int, int]] = None
+    ordered_branch_points_adjusted: Optional[List] = None
+    ordered_branch_points_full: Optional[np.ndarray] = None
+    total_pixel_length: float = 0.0
+    total_adjusted_length: float = 0.0
+    unit_length: float = 0.0
+
+    def ProcessElement(self, branch_points: np.ndarray, branch_length: float) -> bool:
+        """
+        Order and trim branch points based on head and tail connectivity points.
+
+        Uses greedy nearest-neighbor optimization from the head point, then trims
+        any points that fall outside the head-tail segment (for mid-branch connections).
+
+        Args:
+            branch_points: Array of (y, x) coordinates for this branch
+            branch_length: FilFinder-calculated branch length
+
+        Returns:
+            True if processing succeeded, False otherwise
+        """
+        if self.head_point is None or self.tail_point is None:
+            return False
+
+        try:
+            from .path_utils import optimize_path, point_in_neighborhood, create_neighborhood_kernel, contains_mutual_points
+            import cv2
+
+            # 1. Order points using greedy nearest-neighbor from head
+            ordered_points = optimize_path(branch_points.tolist(), start=self.head_point)
+            self.ordered_branch_points_full = np.array(ordered_points)
+            self.ordered_branch_points_adjusted = self.ordered_branch_points_full.copy()
+
+            # 2. Calculate unit length
+            self.total_pixel_length = branch_length
+            self.total_adjusted_length = branch_length
+            self.unit_length = self.total_pixel_length / len(self.ordered_branch_points_full)
+
+            # 3. Trim tail if it occurs mid-branch
+            if not point_in_neighborhood(self.tail_point, tuple(self.ordered_branch_points_adjusted[-1])):
+                # Create kernel around tail point
+                tail_kernel = create_neighborhood_kernel(self.tail_point, size=(5, 5))
+
+                # Find where tail point matches in ordered points
+                tail_bool_array = contains_mutual_points(tail_kernel, self.ordered_branch_points_adjusted)
+
+                if np.any(tail_bool_array):
+                    # Get the last matching index (furthest along the branch)
+                    tail_indices = np.where(tail_bool_array)[0]
+                    tail_index = tail_indices[-1]
+
+                    # Trim everything after tail point
+                    trimmed_length = (len(self.ordered_branch_points_adjusted) - tail_index) * self.unit_length
+                    self.total_adjusted_length -= trimmed_length
+                    self.ordered_branch_points_adjusted = self.ordered_branch_points_adjusted[:tail_index+1, :]
+                else:
+                    # Could not find tail point in branch - should not happen
+                    return False
+
+            # 4. Trim head if it occurs mid-branch
+            if not point_in_neighborhood(self.head_point, tuple(self.ordered_branch_points_adjusted[0])):
+                # Create kernel around head point
+                head_kernel = create_neighborhood_kernel(self.head_point, size=(5, 5))
+
+                # Find where head point matches in ordered points
+                head_bool_array = contains_mutual_points(head_kernel, self.ordered_branch_points_adjusted)
+
+                if np.any(head_bool_array):
+                    # Get the first matching index (closest to start)
+                    head_indices = np.where(head_bool_array)[0]
+                    head_index = head_indices[0]
+
+                    # Trim everything before head point
+                    trimmed_length = head_index * self.unit_length
+                    self.total_adjusted_length -= trimmed_length
+                    self.ordered_branch_points_adjusted = self.ordered_branch_points_adjusted[head_index:, :]
+                else:
+                    # Could not find head point in branch - should not happen
+                    return False
+
+            # Convert back to list of tuples for compatibility
+            self.ordered_branch_points_adjusted = [tuple(map(int, pt)) for pt in self.ordered_branch_points_adjusted]
+
+            return True
+
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"ProcessElement failed: {e}", exc_info=True)
+            return False
 
 # Define utility functions locally to avoid circular import
 def calculate_path_length(coordinates: np.ndarray) -> float:
@@ -114,8 +209,8 @@ class PathAnalyzer:
             )
             
             first_element = PathElement(
-                base_branch_index, intersection_points, intersection_indices, 
-                end_points, end_indices
+                base_branch_index, intersection_points, intersection_indices,
+                end_points, end_indices, head_point=head_point
             )
             path_elements.append(first_element)
             

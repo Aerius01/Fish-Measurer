@@ -27,17 +27,25 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+# Default camera settings (single source of truth for UI and backend)
+DEFAULT_EXPOSURE_MS = 100.0
+DEFAULT_FRAMERATE = 30.0
+DEFAULT_GAIN_MODE = "Once"
+DEFAULT_WHITE_BALANCE_MODE = "Off"
+DEFAULT_TIMEOUT_MS = 5000
+
+
 @dataclass
 class CameraSettings:
     """Configuration settings for camera operations."""
     # Capture settings
-    framerate: float = 30.0
-    timeout_ms: int = 5000
+    framerate: float = DEFAULT_FRAMERATE
+    timeout_ms: int = DEFAULT_TIMEOUT_MS
 
     # Image processing settings
-    exposure_ms: Optional[float] = None  # None = auto
-    gain_mode: str = "Once"  # "Once", "Continuous", "Off"
-    white_balance_mode: str = "Off"  # "Once", "Continuous", "Off"
+    exposure_ms: Optional[float] = DEFAULT_EXPOSURE_MS
+    gain_mode: str = DEFAULT_GAIN_MODE
+    white_balance_mode: str = DEFAULT_WHITE_BALANCE_MODE
 
     # Frame format
     pixel_format: str = "BGR8"  # BGR8, RGB8, Mono8, etc.
@@ -330,10 +338,13 @@ class BaslerCamera(CameraHAL):
             # Open camera
             self._camera.Open()
 
-            # Apply initial settings immediately so first frames are valid
-            self.configure(self.settings)
-
+            # Mark as connected before configuring (configure checks this flag)
             self._is_connected = True
+
+            # Apply initial settings immediately so first frames are valid
+            if not self.configure(self.settings):
+                logger.warning("Failed to apply initial camera settings")
+
             logger.info(f"Connected to Basler camera: {self._camera.GetDeviceInfo().GetModelName()}")
 
             return True

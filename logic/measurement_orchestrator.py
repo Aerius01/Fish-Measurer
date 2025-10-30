@@ -557,6 +557,7 @@ class MeasurementOrchestrator:
 
                 frame = self.camera_manager.current_frame
                 if frame is None:
+                    logger.warning(f"Frame {i}: camera frame is None")
                     continue
 
                 raw_frames.append(frame.copy())
@@ -565,9 +566,15 @@ class MeasurementOrchestrator:
                 binary_mask = self._subtract_background(frame)
                 if binary_mask is not None:
                     binarized_frames.append(binary_mask)
+                else:
+                    logger.warning(f"Frame {i}: background subtraction failed")
+                    # Still add a placeholder to keep lists aligned
+                    binarized_frames.append(None)
 
                 self._report_progress(i + 1, num_frames, f"Capturing frame {i+1}/{num_frames}")
                 time.sleep(1.0 / self._get_camera_framerate())
+
+            logger.info(f"Captured {len(raw_frames)} raw frames and {len(binarized_frames)} binarized frames")
 
             if not raw_frames:
                 self.config.add_error("interrupt", "No frames captured")
@@ -695,6 +702,11 @@ class MeasurementOrchestrator:
             if self.config.should_stop():
                 break
 
+            # Skip frames with no binarized data
+            if binarized_frame is None:
+                logger.warning(f"Skipping frame {i}: no binarized data")
+                continue
+
             self.config.set_processing_frame(i)
             self._report_progress(i + 1, len(raw_frames), f"Analyzing frame {i+1}/{len(raw_frames)}")
 
@@ -707,13 +719,49 @@ class MeasurementOrchestrator:
                 )
 
                 if fish_result.success:
+                    # Attach raw frames for later saving
+                    fish_result.raw_frame = raw_frame
+                    fish_result.binarized_frame = binarized_frame
+                    fish_result.frame_index = i
+
                     instances.append(fish_result)
 
+                    # Save images immediately
+                    self._save_frame_images(fish_result)
+                    logger.info(f"Frame {i} processed successfully: {fish_result.total_length_pixels:.2f} pixels")
+                else:
+                    logger.warning(f"Frame {i} processing failed: {fish_result.error_message}")
+
             except Exception as e:
-                logger.warning(f"Failed to process frame {i}: {e}")
+                logger.error(f"Failed to process frame {i}: {e}", exc_info=True)
                 continue
 
         return instances
+
+    def _save_frame_images(self, result) -> None:
+        """
+        Save images for a measurement result.
+
+        Args:
+            result: FishMeasurementResult with image data
+        """
+        try:
+            frame_idx = getattr(result, 'frame_index', 0)
+
+            # Save raw frame
+            if hasattr(result, 'raw_frame') and result.raw_frame is not None:
+                raw_path = self.folder_manager.get_raw_path(frame_idx, self.image_format)
+                cv2.imwrite(str(raw_path), result.raw_frame)
+                logger.debug(f"Saved raw frame {frame_idx} to {raw_path}")
+
+            # Save visualization (skeleton + longest path overlay)
+            if result.visualization_data and 'processed_frame' in result.visualization_data:
+                skeleton_path = self.folder_manager.get_skeleton_path(frame_idx, self.image_format)
+                cv2.imwrite(str(skeleton_path), result.visualization_data['processed_frame'])
+                logger.debug(f"Saved skeleton frame {frame_idx} to {skeleton_path}")
+
+        except Exception as e:
+            logger.warning(f"Failed to save images for frame {frame_idx}: {e}")
 
     def _finalize_analysis(self, measurements: List) -> None:
         """Finalize analysis with statistics and export."""
